@@ -7,7 +7,7 @@ load_dotenv()
 RRF_K = int(os.getenv("RRF_K", 60))
 
 
-def rrf_fusion(
+def reciprocal_rank_fusion(
     dense_results:  list[dict],
     sparse_results: list[dict],
     k:              int | None = None,
