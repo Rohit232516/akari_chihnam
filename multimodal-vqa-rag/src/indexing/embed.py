@@ -69,18 +69,28 @@ class MultimodalEmbedder:
 
     def embed_text(self, text: str) -> list[float]:
         """
-        Embed a text query into the same 2048-dim space as images.
-        Only call this at query time — never for indexing.
-        Nomic requires 'search_query:' prefix for retrieval mode.
+        Embed a text query into the same space as images.
+        Uses mean pooling over last hidden state.
         """
         prefixed = f"search_query: {text}"
-        inputs   = self.processor(text=prefixed, return_tensors="pt").to(DEVICE)
+        inputs   = self.processor(
+            text=prefixed,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+        ).to(DEVICE)
+
         with torch.no_grad():
-            outputs = self.model.get_text_features(**inputs)
-        vector = outputs[0].cpu().float().tolist()
+            outputs = self.model(**inputs, output_hidden_states=True)
+
+        # mean pool over the last hidden state token dimension
+        hidden = outputs.hidden_states[-1]          # (1, seq_len, hidden_dim)
+        mask   = inputs["attention_mask"].unsqueeze(-1).float()
+        vector = (hidden * mask).sum(dim=1) / mask.sum(dim=1)
+        vector = vector[0].cpu().float().tolist()
+
         logger.debug(f"Embedded query: '{text[:50]}' → dim {len(vector)}")
         return vector
-
     @staticmethod
     def is_supported_image(path: str) -> bool:
         return Path(path).suffix.lower() in {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
