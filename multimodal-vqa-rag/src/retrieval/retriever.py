@@ -46,13 +46,13 @@ class Retriever:
         logger.info("Starting retrieval...")
 
         # 1. Dense retrieval
-        dense_results = self.dense.search(query_vector, top_k=top_k)
+        dense_results = self.dense.retrieve(query_vector, top_k=top_k)
         logger.info(f"Dense results: {len(dense_results)}")
 
         # 2. Sparse retrieval
         sparse_results = []
         if query_text:
-            sparse_results = self.sparse.search(query_text, top_k=top_k)
+            sparse_results = self.sparse.retrieve(query_text, top_k=top_k)
             logger.info(f"Sparse results: {len(sparse_results)}")
 
         # 3. Fusion (RRF)

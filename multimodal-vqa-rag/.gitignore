@@ -1,0 +1,63 @@
+# ─────────────────────────────
+# Python
+# ─────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Python build files
+build/
+dist/
+*.egg-info/
+
+# ─────────────────────────────
+# Environment variables (IMPORTANT)
+# ─────────────────────────────
+.env
+.env.*
+
+# ─────────────────────────────
+# IDE / Editor
+# ─────────────────────────────
+.vscode/
+.idea/
+
+# MacOS
+.DS_Store
+
+# ─────────────────────────────
+# Streamlit
+# ─────────────────────────────
+.streamlit/
+
+# ─────────────────────────────
+# Data (optional — depends on you)
+# ─────────────────────────────
+data/chroma_db/
+data/captions/
+
+# If you don’t want images in repo:
+# data/images/
+
+# ─────────────────────────────
+# Logs
+# ─────────────────────────────
+*.log
+
+# ─────────────────────────────
+# Pytest
+# ─────────────────────────────
+.pytest_cache/
+
+# ─────────────────────────────
+# Misc
+# ─────────────────────────────
+*.tmp
+*.swp
