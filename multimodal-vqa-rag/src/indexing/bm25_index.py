@@ -10,12 +10,12 @@ load_dotenv()
 
 BM25_CAPTIONS_FILE = os.getenv("BM25_CAPTIONS_FILE", "./data/captions/captions.json")
 
-for resource in ["punkt", "stopwords"]:
+# download all required NLTK data silently on first run
+for resource in ["punkt", "punkt_tab", "stopwords"]:
     try:
         nltk.data.find(f"tokenizers/{resource}")
     except LookupError:
         nltk.download(resource, quiet=True)
-
 
 def _tokenise(text: str) -> list[str]:
     return nltk.word_tokenize(text.lower())

@@ -35,11 +35,10 @@ class Reranker:
     """
 
     def __init__(self):
-        from FlagEmbedding import FlagReranker
-        logger.info(f"Loading reranker: {RERANKER_MODEL_ID}")
-        self.reranker = FlagReranker(
-            RERANKER_MODEL_ID,
-            use_fp16=False,   # fp16 not supported on CPU Mac
+        from sentence_transformers import CrossEncoder
+        logger.info(f"Loading reranker: cross-encoder/ms-marco-MiniLM-L-6-v2")
+        self.reranker = CrossEncoder(
+            "cross-encoder/ms-marco-MiniLM-L-6-v2",
             device=RERANKER_DEVICE,
         )
         logger.info("Reranker loaded")
@@ -88,7 +87,7 @@ class Reranker:
 
         logger.debug(f"Reranking {len(pairs)} candidates for: '{question[:60]}'")
 
-        scores = self.reranker.compute_score(pairs, normalize=True)
+        scores = self.reranker.predict(pairs).tolist()
 
         # handle single-item case where compute_score returns a float
         if isinstance(scores, float):
