@@ -5,20 +5,15 @@
 # ============================================================
 
 # ── PyTorch (CPU only, inference only) ───────────────────────
-torch>=2.9.0
-torchvision>=0.20.0
+
 
 # ── HuggingFace (model loading + inference) ──────────────────
-transformers>=4.45.0
-tokenizers>=0.20.0
-huggingface-hub>=0.24.0
-safetensors>=0.4.5
+
+google-genai>=0.8.0
 accelerate>=0.34.0
 
 # ── Multimodal Embedding — Nomic Embed Multimodal 3B ─────────
-sentence-transformers>=3.1.0
-einops>=0.8.0
-timm>=1.0.0
+
 
 # ── Reranker — BGE-reranker-base ─────────────────────────────
 FlagEmbedding>=1.2.9

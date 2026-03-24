@@ -29,10 +29,14 @@ class Indexer:
                  → moondream answers with raw images + question
     """
 
-    def __init__(self):
-        self.embedder = MultimodalEmbedder()
-        self.chroma   = ChromaStore()
-        self.bm25     = BM25Index()
+    def __init__(self, embedder=None, chroma=None, bm25=None):
+        from src.indexing.embed        import MultimodalEmbedder
+        from src.indexing.chroma_store import ChromaStore
+        from src.indexing.bm25_index   import BM25Index
+
+        self.embedder = embedder or MultimodalEmbedder()
+        self.chroma   = chroma   or ChromaStore()
+        self.bm25     = bm25     or BM25Index()
 
     def index_directory(
         self,

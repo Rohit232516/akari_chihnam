@@ -62,8 +62,12 @@ class VQAPipeline:
         # generation
         self.vqa = VQAGenerator()
 
-        # keep indexer available for re-indexing
-        self.indexer = Indexer()
+        # pass shared instances into Indexer — no second model load
+        self.indexer = Indexer(
+            embedder=self.embedder,
+            chroma=self.chroma,
+            bm25=self.bm25,
+        )
 
         logger.info("Pipeline ready")
 
