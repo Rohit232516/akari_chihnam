@@ -9,6 +9,13 @@ import streamlit as st
 from PIL import Image
 import tempfile
 import time
+try:
+    import streamlit as st
+    for key, val in st.secrets.items():
+        os.environ.setdefault(str(key), str(val))
+except Exception:
+    from dotenv import load_dotenv
+    load_dotenv()
 
 from src.pipeline import VQAPipeline
 
