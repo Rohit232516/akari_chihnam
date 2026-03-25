@@ -10,61 +10,48 @@ class Retriever:
     """
 
     def __init__(self, embedder):
-        # Imports (kept inside to avoid circular deps)
-        from src.retrieval.dense import DenseRetriever
+        from src.retrieval.dense  import DenseRetriever
         from src.retrieval.sparse import SparseRetriever
-        from src.retrieval.rrf import reciprocal_rank_fusion
+        from src.retrieval.rrf import reciprocal_rank_fusion as rrf_fusion
         from src.indexing.chroma_store import ChromaStore
-        from src.indexing.bm25_index import BM25Index
+        from src.indexing.bm25_index   import BM25Index
 
         self.embedder = embedder
-
-        # Datastores
-        self.chroma = ChromaStore()
-        self.bm25 = BM25Index()
-
-        # Retrievers
-        self.dense = DenseRetriever(embedder, self.chroma)
-        self.sparse = SparseRetriever(self.bm25)
-
-        # Fusion
-        self.rrf = reciprocal_rank_fusion
+        self.chroma   = ChromaStore()
+        self.bm25     = BM25Index()
+        self.dense    = DenseRetriever(embedder, self.chroma)
+        self.sparse   = SparseRetriever(self.bm25)
+        self.rrf      = rrf_fusion
 
         logger.info("Retriever initialised (dense + sparse + RRF)")
 
-    # ─────────────────────────────────────────────
-    # RETRIEVE
-    # ─────────────────────────────────────────────
-    def retrieve(self, query_vector, query_text=None, top_k=5):
+    def retrieve(self, query_text: str, top_k: int = 5) -> list[dict]:
         """
         Hybrid retrieval:
-        1. Dense (vector search)
-        2. Sparse (BM25)
-        3. Fuse using RRF
+        1. Dense vector search via ChromaDB
+        2. Sparse keyword search via BM25
+        3. Fuse with RRF
+        4. Return top_k results
         """
-
-        logger.info("Starting retrieval...")
+        logger.info(f"Starting retrieval for: '{query_text[:60]}'")
 
         # 1. Dense retrieval
-        dense_results = self.dense.retrieve(query_vector, top_k=top_k)
+        dense_results = self.dense.retrieve(query_text, top_n=20)
         logger.info(f"Dense results: {len(dense_results)}")
 
         # 2. Sparse retrieval
-        sparse_results = []
-        if query_text:
-            sparse_results = self.sparse.retrieve(query_text, top_k=top_k)
-            logger.info(f"Sparse results: {len(sparse_results)}")
+        sparse_results = self.sparse.retrieve(query_text, top_n=20)
+        logger.info(f"Sparse results: {len(sparse_results)}")
 
-        # 3. Fusion (RRF)
+        # 3. RRF fusion
         if sparse_results:
-            results = self.rrf(dense_results, sparse_results)
+            fused = self.rrf(dense_results, sparse_results)
             logger.info("Applied RRF fusion")
         else:
-            results = dense_results
-            logger.info("Using dense only")
+            fused = dense_results
+            logger.info("Using dense only (no sparse results)")
 
-        # 4. Top-K cutoff
-        final_results = results[:top_k]
-        logger.info(f"Final results: {len(final_results)}")
-
-        return final_results
+        # 4. Top-k cutoff
+        final = fused[:top_k]
+        logger.info(f"Final results: {len(final)}")
+        return final
