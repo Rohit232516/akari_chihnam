@@ -9,6 +9,8 @@ import streamlit as st
 from PIL import Image
 import tempfile
 import time
+import pypdf
+import docx
 try:
     import streamlit as st
     for key, val in st.secrets.items():
@@ -52,6 +54,9 @@ if "pending_image" not in st.session_state:
 if "pending_image_path" not in st.session_state:
     st.session_state.pending_image_path = None
 
+if "pending_doc_text" not in st.session_state:
+    st.session_state.pending_doc_text = None
+
 # ── Header ────────────────────────────────────
 st.title("🧠 Multimodal VQA Assistant")
 st.caption("Powered by Gemini 2.5 Flash · Upload images · Ask anything")
@@ -91,9 +96,42 @@ with st.sidebar:
         st.session_state.pending_image_path = None
 
     st.divider()
+    st.header("📄 Attach Document")
+    st.caption("Upload a PDF or Word doc to ask questions about it.")
+
+    uploaded_doc = st.file_uploader(
+        "Choose a PDF or DOCX",
+        type=["pdf", "docx"],
+        label_visibility="collapsed",
+    )
+
+    if uploaded_doc:
+        try:
+            if uploaded_doc.name.endswith(".pdf"):
+                reader = pypdf.PdfReader(uploaded_doc)
+                doc_text = "\n".join(page.extract_text() or "" for page in reader.pages)
+            else:
+                document = docx.Document(uploaded_doc)
+                doc_text = "\n".join(p.text for p in document.paragraphs)
+
+            doc_text = doc_text.strip()
+            if doc_text:
+                st.session_state.pending_doc_text = doc_text
+                st.success(f"Document ready ({len(doc_text):,} chars) — now ask your question")
+            else:
+                st.warning("Could not extract text from this document.")
+                st.session_state.pending_doc_text = None
+        except Exception as e:
+            st.error(f"Failed to read document: {e}")
+            st.session_state.pending_doc_text = None
+    else:
+        st.session_state.pending_doc_text = None
+
+    st.divider()
     st.caption("**How it works**")
     st.caption("• Upload an image → Gemini answers visually")
-    st.caption("• No image → answers from indexed corpus via RAG")
+    st.caption("• Upload a doc → Gemini answers from doc text")
+    st.caption("• No upload → answers from indexed corpus via RAG")
 
     if st.button("🗑️ Clear chat"):
         st.session_state.messages = []
@@ -105,6 +143,7 @@ user_input = st.chat_input("Ask anything...")
 if user_input:
     image         = st.session_state.pending_image
     image_path    = st.session_state.pending_image_path
+    doc_text      = st.session_state.pending_doc_text
 
     # ── Show user message ─────────────────────
     with st.chat_message("user"):
@@ -128,9 +167,16 @@ if user_input:
                     answer = pipeline.generator.generate(
                         question=user_input,
                         image_paths=[image_path],
+                        context=doc_text or "",
+                    )
+                elif doc_text:
+                    # document uploaded → send text context to Gemini, skip RAG
+                    answer = pipeline.generator.generate(
+                        question=user_input,
+                        context=doc_text,
                     )
                 else:
-                    # no image → use full RAG pipeline over indexed corpus
+                    # no upload → use full RAG pipeline over indexed corpus
                     answer = pipeline.query(question=user_input)
 
             except Exception as e:
@@ -147,6 +193,7 @@ if user_input:
         "image":   None,
     })
 
-    # clear pending image after sending
+    # clear pending attachments after sending
     st.session_state.pending_image      = None
     st.session_state.pending_image_path = None
+    st.session_state.pending_doc_text   = None
